@@ -1,28 +1,9 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
 };
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
@@ -33,7 +14,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const ws_1 = __importDefault(require("ws"));
 const typegoose_1 = require("@typegoose/typegoose");
-const querystring = __importStar(require("querystring"));
 const ajv_1 = __importDefault(require("ajv"));
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
@@ -160,6 +140,7 @@ const errorMsg = new ErrorMsg;
 errorMsg.errorMap = {
     400: "Bad request",
     404: "Not found",
+    1003: "Params aren't correct",
 };
 //MongoDB
 // const mongoURL = "mongodb://localhost:27017/wschat"
@@ -211,28 +192,34 @@ threadWs.on('connection', (webSocketConn, req) => {
     threadApp(webSocketConn, req);
 });
 function threadApp(webSocketConn, req) {
-    var _a, _b;
-    const reParam = (_a = req.url) === null || _a === void 0 ? void 0 : _a.match(/(?<=\?).+/);
-    const urlParam = querystring.decode(reParam[0]);
-    const sessionNameInURL = (_b = urlParam.name) === null || _b === void 0 ? void 0 : _b.toString();
-    if ('name' in urlParam) {
-        threadHub.addSession(sessionNameInURL, webSocketConn);
-    }
-    else {
-        webSocketConn.close(1003, "Params aren't correct. ");
-    }
-    webSocketConn.on('message', (message) => {
-        const messageParsed = parsePost(message);
-        if (messageParsed != null) {
-            const messageStr = JSON.stringify(messageParsed);
-            threadHub.broadcastGroup(sessionNameInURL, messageStr);
+    var _a;
+    //const urlParam = querystring.decode(urlParamMap!)
+    try {
+        const urlParamMap = url_1.default.parse(req.url, true);
+        const sessionNameInURL = (_a = urlParamMap.query["name"]) === null || _a === void 0 ? void 0 : _a.toString();
+        if (sessionNameInURL != undefined) {
+            threadHub.addSession(sessionNameInURL, webSocketConn);
+            webSocketConn.on('message', (message) => {
+                const messageParsed = parsePost(message);
+                if (messageParsed != null) {
+                    const messageStr = JSON.stringify(messageParsed);
+                    threadHub.broadcastGroup(sessionNameInURL, messageStr);
+                }
+                else {
+                    webSocketConn.send(errorMsg.toString(400));
+                }
+            });
+            webSocketConn.on('close', () => {
+                threadHub.deleteSession(sessionNameInURL, webSocketConn);
+            });
         }
         else {
-            webSocketConn.send(errorMsg.toString(400));
+            throw new Error('Params error');
         }
-    });
-    webSocketConn.on('close', () => {
-        threadHub.deleteSession(sessionNameInURL, webSocketConn);
-    });
+    }
+    catch (_b) {
+        webSocketConn.send(errorMsg.toString(1003));
+        webSocketConn.close(1003, "Params aren't correct. ");
+    }
 }
 //# sourceMappingURL=test.js.map

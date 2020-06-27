@@ -153,6 +153,7 @@ const errorMsg = new ErrorMsg
 errorMsg.errorMap = {
   400: "Bad request",
   404: "Not found",
+  1003:"Params aren't correct",
 }
 
 //MongoDB
@@ -208,25 +209,29 @@ threadWs.on('connection', (webSocketConn, req) => {
   threadApp(webSocketConn,req)
 })
 function threadApp(webSocketConn: WebSocket, req: http.IncomingMessage):void {
-  const reParam=req.url?.match(/(?<=\?).+/)
-  const urlParam = querystring.decode(reParam![0])
-  const sessionNameInURL = urlParam.name?.toString()!
-  if ('name' in urlParam) {
-    threadHub.addSession(sessionNameInURL,webSocketConn)
-  }
-  else {
+  //const urlParam = querystring.decode(urlParamMap!)
+  try {
+    const urlParamMap = url.parse(req.url!, true)
+    const sessionNameInURL = urlParamMap.query["name"]?.toString()
+    if (sessionNameInURL != undefined) {
+      threadHub.addSession(sessionNameInURL,webSocketConn)
+      webSocketConn.on('message', (message) => {
+        const messageParsed = parsePost(message)
+        if (messageParsed != null) {
+          const messageStr = JSON.stringify(messageParsed) 
+          threadHub.broadcastGroup(sessionNameInURL,messageStr)
+        } else {
+          webSocketConn.send(errorMsg.toString(400))
+        }
+      })
+      webSocketConn.on('close', () => {
+        threadHub.deleteSession(sessionNameInURL, webSocketConn)
+      })
+    } else {
+      throw new Error('Params error')
+    }
+  } catch{
+    webSocketConn.send(errorMsg.toString(1003))
     webSocketConn.close(1003,"Params aren't correct. ")
   }
-  webSocketConn.on('message', (message) => {
-    const messageParsed = parsePost(message)
-    if (messageParsed != null) {
-      const messageStr = JSON.stringify(messageParsed) 
-      threadHub.broadcastGroup(sessionNameInURL,messageStr)
-    } else {
-      webSocketConn.send(errorMsg.toString(400))
-    }
-  })
-  webSocketConn.on('close', () => {
-    threadHub.deleteSession(sessionNameInURL, webSocketConn)
-  })
 }
