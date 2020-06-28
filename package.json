@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --nolazy --inspect-brk=9229 src/test.js",
-    "schema":"typescript-json-schema ./tsconfig.json Post -o ./src/PostSchema.json --strictNullChecks true --required true"
+    "test": "node --nolazy --inspect-brk=9229 src/index.js",
+    "schema":"typescript-json-schema ./tsconfig.json PostInterface -o ./src/PostSchema.json --strictNullChecks true --required true"
   },
   "keywords": [],
   "author": "",
