@@ -1,7 +1,7 @@
 import WebSocket from 'ws'
 import mongodb, { ObjectID } from 'mongodb'
 import mongoose from 'mongoose'
-import { prop, getModelForClass } from '@typegoose/typegoose'
+import { prop, getModelForClass, ReturnModelType } from '@typegoose/typegoose'
 import * as querystring from 'querystring'
 import { v4 as uuid } from 'uuid'
 import Ajv from 'ajv'
@@ -12,20 +12,31 @@ import { Socket } from 'net'
 //use import json to keep type check
 import cfg from './config.json'
 
+//AJV Config
 //use typescript-json-schema (https://github.com/YousefED/typescript-json-schema)
 //to compile the interface to JSON Schema
 //IDK why typescript doesn't let me to use import
 //Anyway type checking is not needed in schema
-const postSchema = require('./PostSchema.json') 
+import SCHEMA_DEF = require('./schemaDef.json') 
+//import SCHEMA=require('./schemaDef.json')
+const postSchema = SCHEMA_DEF.definitions.PostInterface
+const boardSchema = SCHEMA_DEF.definitions.BoardInterface
+const threadSchema = SCHEMA_DEF.definitions.ThreadInterface
+const userSchema=SCHEMA_DEF.definitions.UserInterface
+const ajv = new Ajv({ allErrors: true })
 
 //Connect to ws://127.0.0.1:8081/thread?name=yourGroupname
 //to test the server
 
 /**
  * @TJS-additionalProperties false
+ * 
  */
 export interface PostInterface {
-  id?: ObjectID
+  /**
+   * @minLength 6
+   * @maxLength 26
+   */
   nickname: string
   content:string
   token?: string
@@ -49,14 +60,27 @@ class Post implements PostInterface{
   public threadId!:string
 }
 
-interface ThreadInterface{
-
+export interface ThreadInterface{
+  boardName: string
+    /**
+   * @minLength 6
+   * @maxLength 300
+   */
+  title: string
+    /**
+   * @minLength 6
+   * @maxLength 26
+   */
+  creator?: string
+  creatorToken?: string
+  //postList?: ObjectID
+  tag?:string[]
 }
-class Thread{
+class Thread implements ThreadInterface{
   @prop()
   id: ObjectID
   @prop()
-  boardId: ObjectID
+  boardName: string
   @prop()
   title: string
   @prop()
@@ -66,17 +90,40 @@ class Thread{
   @prop({ref:Post})
   postList: ObjectID
   @prop()
-  tag:string[]
+  tag: string[]
+  @prop()
+  updateTime: ObjectID
+  //Return latest post's ObjectID
 }
-class Board{
+export interface BoardInterface{
+    /**
+   * @minLength 6
+   * @maxLength 26
+   */
+  name: string
+  manager?:User[]
+}
+class Board implements BoardInterface{
   @prop()
   id: ObjectID
   @prop({ref:Thread})
   threadList: ObjectID[]
   @prop()
+  name:string
+  @prop()
   manager: User[]
 }
-class User{
+export interface UserInterface{
+  id?: ObjectID
+    /**
+   * @minLength 6
+   * @maxLength 26
+   * @pattern ^[a-zA-Z0-9_.-]*$
+   */
+  name: string
+  password:string
+}
+class User implements UserInterface{
   @prop()
   id: ObjectID
   @prop()
@@ -157,7 +204,7 @@ class ThreadSessionGroup implements WsSessionGroup{
 
 function parsePost(wsData:WebSocket.Data) :Post|null{
   const wsDataStr = wsData.toString()
-  const ajv = new Ajv({allErrors:true})
+
   try {
     const wsDataJson = JSON.parse(wsDataStr)
     const isValid = ajv.validate(postSchema,wsDataJson)
@@ -170,25 +217,113 @@ function parsePost(wsData:WebSocket.Data) :Post|null{
     return null
   }
 }
-
-//Express Web Server
-//const EXPRESS_PORT=8080
-const app = express()
-app.get('/', (req,res) => {
-  res.send("hello world")
-})
-app.get('/board', (req, res) => {
-  //Get board name
-})
-app.get('/board/:boardName', (req, res) => {
-  //Get all the thread in board
+interface ResponseJSON{
+  total: number
+  from: number
+  to: number
+  data:any
+}
+class ResponseJson implements ResponseJSON{
+  constructor(total:number,from:number,to:number,data:any){
+    this.total=total
+    this.from=from
+    this.to=to
+    this.data=data
+  }
+  total: number
+  from: number
+  to: number
+  data: any
+  threadId?: ObjectID
+  boardId?: ObjectID
+}
+function getBoards(req: express.Request, res: express.Response) {
+  req.params
   try {
-    PostModel.find().lean().exec((err, threads) => {
-      res.json(threads)
+    BoardModel.countDocuments({}, (err, countResult) => {
+      BoardModel.find().lean().exec((err, obj) => {
+        res.json(obj)
+      })
     })
   } catch{
     res.json(errorMsg.toString(404))
   }
+}
+function postBoard(req:express.Request,res:express.Response) {
+  try {
+
+  } catch{
+    res.json(errorMsg.toString(400))
+  }
+}
+const PAGE_LIMIT=30
+function getThreads(req: express.Request, res: express.Response) {
+  const start = Number(req.query["st"])
+  const end=Number(req.query["e"])
+  const boardName=req.params["boardName"]
+  //hasn't pass the board name
+  ThreadModel.countDocuments({boardName:boardName}, (err, countResult) => {
+    if (Number.isInteger(start) &&Number.isInteger(end)&& (end-start<PAGE_LIMIT) ) {
+      try {
+        ThreadModel.find({}, null, { skip: start, limit: end - start, sort: { updateTime: -1 } }).lean().exec((err, obj) => {
+          const response = new ResponseJson(countResult,start,start+obj.length,obj)
+          res.json(response)
+        })
+      } catch{
+        res.json(errorMsg.toString(404))
+      }
+    } else {
+      try {
+        ThreadModel.find().lean().exec((err, obj) => {
+          res.json(obj)
+        })
+      } catch{
+        res.json(errorMsg.toString(404))
+      }
+    }
+  })
+}
+function postThread(req:express.Request,res:express.Response) {
+  try {
+
+  } catch{
+    res.json(errorMsg.toString(400))
+  }
+}
+
+function getPosts(req:express.Request,res:express.Response) {
+  try {
+    PostModel.find().lean().exec((err, obj) => {
+      res.json(obj)
+    })
+  } catch{
+    res.json(errorMsg.toString(404))
+  }
+}
+function postPost(req:express.Request,res:express.Response) {
+  try {
+
+  } catch{
+    res.json(errorMsg.toString(400))
+  }
+}
+
+//Express Web Server
+const app = express()
+app.get('/', (req,res) => {
+  res.json({message:"Hello World"})
+})
+app.get('/board', (req, res) => {
+  //Get board name
+  //getBoards(res)
+})
+app.post('/board', (req, res) => {
+  //Create a board
+  postBoard(req,res)
+})
+app.get('/board/:boardName', (req, res) => {
+  //Get all the thread in board
+
 })
 app.get('/board/:boardName/:threadId', (req, res) => {
   //Get all the post in thread
@@ -198,7 +333,46 @@ app.get('/board/:boardName/:threadId', (req, res) => {
     res.json(errorMsg.toString(404))
   }
 })
+app.post('/board/:boardName', (req, res) => {
+  //Create a thread belongs to the board
+})
+//Modify Post
+app.get('/board/:boardName/:threadId/:postId', (req, res) => {
+  //Get a post
+})
+app.post('/board/:boardName/:threadId', (req, res) => {
+  //Create a post belongs to the thread
+  //getPosts(res)
+})
 
+//Only for testing
+app.get('/thread', (req, res) => {
+  const start = Number(req.query["st"])
+  const end = Number(req.query["e"])
+  PostModel.countDocuments({}, (err, countResult) => {
+    if (Number.isInteger(start) && Number.isInteger(end) && (end - start < PAGE_LIMIT)) {
+      try {
+        //A better way to filter
+        PostModel.find({}, null, { skip: start, limit: end - start, sort: { _id: -1 } }).select("-threadId").lean().exec((err, obj) => {
+          const response = new ResponseJson(countResult,start,start+obj.length,obj)
+          res.json(response)
+        })
+      } catch{
+        res.json(errorMsg.toString(404))
+      }
+    } else {
+      try {
+        //A better way to filter
+        PostModel.find({}, null, { skip: 0, limit: PAGE_LIMIT, sort: { _id: -1 } }).select("-threadId").lean().exec((err, obj) => {
+          const response = new ResponseJson(countResult,0,obj.length,obj)
+          res.json(response)
+        })
+      } catch{
+        res.json(errorMsg.toString(404))
+      }
+    }
+  })
+})
 //Error Parse
 const errorMsg = new ErrorMsg
 errorMsg.errorMap = {
@@ -210,7 +384,10 @@ errorMsg.errorMap = {
 
 //MongoDB
 const mongoURL = `mongodb://${cfg.database.hostname}:${cfg.database.port}/${cfg.database.name}`
-const PostModel=getModelForClass(Post)
+const PostModel = getModelForClass(Post)
+const ThreadModel = getModelForClass(Thread)
+const BoardModel = getModelForClass(Board)
+const UserModel=getModelForClass(User)
 mongoose.connect(mongoURL, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => {
   console.log(err)
 })
@@ -288,8 +465,11 @@ async function threadApp(webSocketConn: WebSocket, req: http.IncomingMessage) {
 async function onPost(webSocketConn:WebSocket,message:WebSocket.Data,sessionGroupName:string) {
   const messageParsed = parsePost(message)
   if (messageParsed != null) {      
-    const savedMsg = await savePost(messageParsed)
+    let savedMsg = await savePost(messageParsed)
     if (savedMsg != null) {
+      //Must use toObject() to delete some property
+      savedMsg=savedMsg.toObject()
+      delete savedMsg?.threadId
       const messageStr = JSON.stringify(savedMsg) 
       threadHub.broadcastGroup(sessionGroupName,messageStr)
     } else {

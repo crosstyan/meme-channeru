@@ -31,11 +31,18 @@ const http_1 = __importDefault(require("http"));
 const url_1 = __importDefault(require("url"));
 //use import json to keep type check
 const config_json_1 = __importDefault(require("./config.json"));
+//AJV Config
 //use typescript-json-schema (https://github.com/YousefED/typescript-json-schema)
 //to compile the interface to JSON Schema
 //IDK why typescript doesn't let me to use import
 //Anyway type checking is not needed in schema
-const postSchema = require('./PostSchema.json');
+const SCHEMA_DEF = require("./schemaDef.json");
+//import SCHEMA=require('./schemaDef.json')
+const postSchema = SCHEMA_DEF.definitions.PostInterface;
+const boardSchema = SCHEMA_DEF.definitions.BoardInterface;
+const threadSchema = SCHEMA_DEF.definitions.ThreadInterface;
+const userSchema = SCHEMA_DEF.definitions.UserInterface;
+const ajv = new ajv_1.default({ allErrors: true });
 class Post {
 }
 __decorate([
@@ -66,8 +73,8 @@ __decorate([
 ], Thread.prototype, "id", void 0);
 __decorate([
     typegoose_1.prop(),
-    __metadata("design:type", mongodb_1.ObjectID)
-], Thread.prototype, "boardId", void 0);
+    __metadata("design:type", String)
+], Thread.prototype, "boardName", void 0);
 __decorate([
     typegoose_1.prop(),
     __metadata("design:type", String)
@@ -88,6 +95,12 @@ __decorate([
     typegoose_1.prop(),
     __metadata("design:type", Array)
 ], Thread.prototype, "tag", void 0);
+__decorate([
+    typegoose_1.prop(),
+    __metadata("design:type", mongodb_1.ObjectID
+    //Return latest post's ObjectID
+    )
+], Thread.prototype, "updateTime", void 0);
 class Board {
 }
 __decorate([
@@ -98,6 +111,10 @@ __decorate([
     typegoose_1.prop({ ref: Thread }),
     __metadata("design:type", Array)
 ], Board.prototype, "threadList", void 0);
+__decorate([
+    typegoose_1.prop(),
+    __metadata("design:type", String)
+], Board.prototype, "name", void 0);
 __decorate([
     typegoose_1.prop(),
     __metadata("design:type", Array)
@@ -184,7 +201,6 @@ class ThreadSessionGroup {
 }
 function parsePost(wsData) {
     const wsDataStr = wsData.toString();
-    const ajv = new ajv_1.default({ allErrors: true });
     try {
         const wsDataJson = JSON.parse(wsDataStr);
         const isValid = ajv.validate(postSchema, wsDataJson);
@@ -199,25 +215,103 @@ function parsePost(wsData) {
         return null;
     }
 }
-//Express Web Server
-//const EXPRESS_PORT=8080
-const app = express_1.default();
-app.get('/', (req, res) => {
-    res.send("hello world");
-});
-app.get('/board', (req, res) => {
-    //Get board name
-});
-app.get('/board/:boardName', (req, res) => {
-    //Get all the thread in board
+class ResponseJson {
+    constructor(total, from, to, data) {
+        this.total = total;
+        this.from = from;
+        this.to = to;
+        this.data = data;
+    }
+}
+function getBoards(req, res) {
+    req.params;
     try {
-        PostModel.find().lean().exec((err, threads) => {
-            res.json(threads);
+        BoardModel.countDocuments({}, (err, countResult) => {
+            BoardModel.find().lean().exec((err, obj) => {
+                res.json(obj);
+            });
         });
     }
     catch (_a) {
         res.json(errorMsg.toString(404));
     }
+}
+function postBoard(req, res) {
+    try {
+    }
+    catch (_a) {
+        res.json(errorMsg.toString(400));
+    }
+}
+const PAGE_LIMIT = 30;
+function getThreads(req, res) {
+    const start = Number(req.query["st"]);
+    const end = Number(req.query["e"]);
+    const boardName = req.params["boardName"];
+    //hasn't pass the board name
+    ThreadModel.countDocuments({ boardName: boardName }, (err, countResult) => {
+        if (Number.isInteger(start) && Number.isInteger(end) && (end - start < PAGE_LIMIT)) {
+            try {
+                ThreadModel.find({}, null, { skip: start, limit: end - start, sort: { updateTime: -1 } }).lean().exec((err, obj) => {
+                    const response = new ResponseJson(countResult, start, start + obj.length, obj);
+                    res.json(response);
+                });
+            }
+            catch (_a) {
+                res.json(errorMsg.toString(404));
+            }
+        }
+        else {
+            try {
+                ThreadModel.find().lean().exec((err, obj) => {
+                    res.json(obj);
+                });
+            }
+            catch (_b) {
+                res.json(errorMsg.toString(404));
+            }
+        }
+    });
+}
+function postThread(req, res) {
+    try {
+    }
+    catch (_a) {
+        res.json(errorMsg.toString(400));
+    }
+}
+function getPosts(req, res) {
+    try {
+        PostModel.find().lean().exec((err, obj) => {
+            res.json(obj);
+        });
+    }
+    catch (_a) {
+        res.json(errorMsg.toString(404));
+    }
+}
+function postPost(req, res) {
+    try {
+    }
+    catch (_a) {
+        res.json(errorMsg.toString(400));
+    }
+}
+//Express Web Server
+const app = express_1.default();
+app.get('/', (req, res) => {
+    res.json({ message: "Hello World" });
+});
+app.get('/board', (req, res) => {
+    //Get board name
+    //getBoards(res)
+});
+app.post('/board', (req, res) => {
+    //Create a board
+    postBoard(req, res);
+});
+app.get('/board/:boardName', (req, res) => {
+    //Get all the thread in board
 });
 app.get('/board/:boardName/:threadId', (req, res) => {
     //Get all the post in thread
@@ -226,6 +320,48 @@ app.get('/board/:boardName/:threadId', (req, res) => {
     catch (_a) {
         res.json(errorMsg.toString(404));
     }
+});
+app.post('/board/:boardName', (req, res) => {
+    //Create a thread belongs to the board
+});
+//Modify Post
+app.get('/board/:boardName/:threadId/:postId', (req, res) => {
+    //Get a post
+});
+app.post('/board/:boardName/:threadId', (req, res) => {
+    //Create a post belongs to the thread
+    //getPosts(res)
+});
+//Only for testing
+app.get('/thread', (req, res) => {
+    const start = Number(req.query["st"]);
+    const end = Number(req.query["e"]);
+    PostModel.countDocuments({}, (err, countResult) => {
+        if (Number.isInteger(start) && Number.isInteger(end) && (end - start < PAGE_LIMIT)) {
+            try {
+                //A better way to filter
+                PostModel.find({}, null, { skip: start, limit: end - start, sort: { _id: -1 } }).select("-threadId").lean().exec((err, obj) => {
+                    const response = new ResponseJson(countResult, start, start + obj.length, obj);
+                    res.json(response);
+                });
+            }
+            catch (_a) {
+                res.json(errorMsg.toString(404));
+            }
+        }
+        else {
+            try {
+                //A better way to filter
+                PostModel.find({}, null, { skip: 0, limit: PAGE_LIMIT, sort: { _id: -1 } }).select("-threadId").lean().exec((err, obj) => {
+                    const response = new ResponseJson(countResult, 0, obj.length, obj);
+                    res.json(response);
+                });
+            }
+            catch (_b) {
+                res.json(errorMsg.toString(404));
+            }
+        }
+    });
 });
 //Error Parse
 const errorMsg = new ErrorMsg;
@@ -238,6 +374,9 @@ errorMsg.errorMap = {
 //MongoDB
 const mongoURL = `mongodb://${config_json_1.default.database.hostname}:${config_json_1.default.database.port}/${config_json_1.default.database.name}`;
 const PostModel = typegoose_1.getModelForClass(Post);
+const ThreadModel = typegoose_1.getModelForClass(Thread);
+const BoardModel = typegoose_1.getModelForClass(Board);
+const UserModel = typegoose_1.getModelForClass(User);
 mongoose_1.default.connect(mongoURL, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => {
     console.log(err);
 });
@@ -317,8 +456,11 @@ function onPost(webSocketConn, message, sessionGroupName) {
     return __awaiter(this, void 0, void 0, function* () {
         const messageParsed = parsePost(message);
         if (messageParsed != null) {
-            const savedMsg = yield savePost(messageParsed);
+            let savedMsg = yield savePost(messageParsed);
             if (savedMsg != null) {
+                //Must use toObject() to delete some property
+                savedMsg = savedMsg.toObject();
+                savedMsg === null || savedMsg === void 0 ? true : delete savedMsg.threadId;
                 const messageStr = JSON.stringify(savedMsg);
                 threadHub.broadcastGroup(sessionGroupName, messageStr);
             }

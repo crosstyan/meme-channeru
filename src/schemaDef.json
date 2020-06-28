@@ -1,0 +1,398 @@
+{
+    "$id": "http://example.com/schemas/schemaDef.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Board": {
+            "properties": {
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                },
+                "manager": {
+                    "items": {
+                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/User"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "threadList": {
+                    "items": {
+                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "id",
+                "manager",
+                "name",
+                "threadList"
+            ],
+            "type": "object"
+        },
+        "BoardInterface": {
+            "properties": {
+                "manager": {
+                    "items": {
+                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/User"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "maxLength": 26,
+                    "minLength": 6,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "type": "object"
+        },
+        "ErrorMsg": {
+            "properties": {
+                "errorMap": {
+                    "additionalProperties": false,
+                    "description": "Construct a type with a set of properties K of type T",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "required": [
+                "errorMap"
+            ],
+            "type": "object"
+        },
+        "ObjectId": {
+            "description": "A class representation of the BSON ObjectId type.",
+            "properties": {
+                "generationTime": {
+                    "description": "The generation time of this ObjectId instance",
+                    "type": "number"
+                }
+            },
+            "required": [
+                "generationTime"
+            ],
+            "type": "object"
+        },
+        "Post": {
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "threadId": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content",
+                "nickname",
+                "threadId"
+            ],
+            "type": "object"
+        },
+        "PostInterface": {
+            "additionalProperties": false,
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "maxLength": 26,
+                    "minLength": 6,
+                    "type": "string"
+                },
+                "threadId": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content",
+                "nickname",
+                "threadId"
+            ],
+            "type": "object"
+        },
+        "Record<string,WsSessionGroup>": {
+            "description": "Construct a type with a set of properties K of type T",
+            "type": "object"
+        },
+        "ResponseJSON": {
+            "properties": {
+                "data": {
+                    "items": {
+                    },
+                    "type": "array"
+                },
+                "from": {
+                    "type": "number"
+                },
+                "to": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "data",
+                "from",
+                "to",
+                "total"
+            ],
+            "type": "object"
+        },
+        "Thread": {
+            "properties": {
+                "boardId": {
+                    "type": "string"
+                },
+                "creator": {
+                    "type": "string"
+                },
+                "creatorToken": {
+                    "type": "string"
+                },
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                },
+                "postList": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                },
+                "tag": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                }
+            },
+            "required": [
+                "boardId",
+                "creator",
+                "creatorToken",
+                "id",
+                "postList",
+                "tag",
+                "title",
+                "updateTime"
+            ],
+            "type": "object"
+        },
+        "ThreadInterface": {
+            "properties": {
+                "boardId": {
+                    "type": "string"
+                },
+                "creator": {
+                    "maxLength": 26,
+                    "minLength": 6,
+                    "type": "string"
+                },
+                "creatorToken": {
+                    "type": "string"
+                },
+                "tag": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "title": {
+                    "maxLength": 300,
+                    "minLength": 6,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "boardId",
+                "title"
+            ],
+            "type": "object"
+        },
+        "ThreadSessionGroup": {
+            "properties": {
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "name": {
+                    "type": "string"
+                },
+                "wsSessions": {
+                    "default": [
+                    ],
+                    "items": {
+                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/import(\"C:/Users/cross/Desktop/Project/Node/test/node_modules/@types/ws/index\")"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "wsSessions"
+            ],
+            "type": "object"
+        },
+        "User": {
+            "properties": {
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "name",
+                "password"
+            ],
+            "type": "object"
+        },
+        "UserInterface": {
+            "properties": {
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "name": {
+                    "maxLength": 26,
+                    "minLength": 6,
+                    "pattern": "^[a-zA-Z0-9_.-]*$",
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "password"
+            ],
+            "type": "object"
+        },
+        "WsHub": {
+            "properties": {
+                "wsSessionGroupMap": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Record<string,WsSessionGroup>"
+                }
+            },
+            "required": [
+                "wsSessionGroupMap"
+            ],
+            "type": "object"
+        },
+        "WsSessionGroup": {
+            "properties": {
+                "id": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "name": {
+                    "type": "string"
+                },
+                "wsSessions": {
+                    "items": {
+                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/import(\"C:/Users/cross/Desktop/Project/Node/test/node_modules/@types/ws/index\")"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "wsSessions"
+            ],
+            "type": "object"
+        },
+        "import(\"C:/Users/cross/Desktop/Project/Node/test/node_modules/@types/ws/index\")": {
+            "properties": {
+                "CLOSED": {
+                    "type": "number"
+                },
+                "CLOSING": {
+                    "type": "number"
+                },
+                "CONNECTING": {
+                    "type": "number"
+                },
+                "OPEN": {
+                    "type": "number"
+                },
+                "binaryType": {
+                    "type": "string"
+                },
+                "bufferedAmount": {
+                    "type": "number"
+                },
+                "extensions": {
+                    "type": "string"
+                },
+                "onclose": {
+                    "type": "object"
+                },
+                "onerror": {
+                    "type": "object"
+                },
+                "onmessage": {
+                    "type": "object"
+                },
+                "onopen": {
+                    "type": "object"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "readyState": {
+                    "type": "number"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "CLOSED",
+                "CLOSING",
+                "CONNECTING",
+                "OPEN",
+                "binaryType",
+                "bufferedAmount",
+                "extensions",
+                "onclose",
+                "onerror",
+                "onmessage",
+                "onopen",
+                "protocol",
+                "readyState",
+                "url"
+            ],
+            "type": "object"
+        }
+    }
+}
+
