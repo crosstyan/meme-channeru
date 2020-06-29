@@ -1,7 +1,8 @@
 {
   "server":{
     "port":8081,
-    "hostname":"localhost"
+    "hostname":"localhost",
+    "page_limit":30
   },
   "database":{
     "port": 27017,

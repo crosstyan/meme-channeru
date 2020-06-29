@@ -1,13 +1,13 @@
 import WebSocket from 'ws'
-import mongodb, { ObjectID } from 'mongodb'
+import { ObjectID } from 'mongodb'
 import http, { Server } from 'http'
 import url from 'url'
 import { Socket } from 'net'
 //use import json to keep type check
 import cfg from './config.json'
-import { errorMsg } from './utils'
-import { ajv, postSchema } from './verify'
-import * as model from './model'
+import { errorMsg,xssFilter } from './utils'
+import { ajv, postSchema,verifyObject,verifyString } from './verify'
+import * as model from './models/index'
 
 interface WsSessionGroup{
   id?: ObjectID
@@ -60,22 +60,6 @@ class ThreadSessionGroup implements WsSessionGroup{
   wsSessions: WebSocket[] =[]
 }
 
-function parsePost(wsData:WebSocket.Data) :model.Post|null{
-  const wsDataStr = wsData.toString()
-
-  try {
-    const wsDataJson = JSON.parse(wsDataStr)
-    const isValid = ajv.validate(postSchema,wsDataJson)
-    if (isValid) {
-      return wsDataJson as model.Post
-    } else {
-      return null
-    }
-  } catch{
-    return null
-  }
-}
-
 //Websocket Board Server
 //Stupid you can't do that! A http server can only bind a websocket server. 
 //Actually you can use node http server. 
@@ -118,9 +102,13 @@ async function threadApp(webSocketConn: WebSocket, req: http.IncomingMessage) {
   }
 }
 
-async function onPost(webSocketConn:WebSocket,message:WebSocket.Data,sessionGroupName:string) {
-  const messageParsed = parsePost(message)
-  if (messageParsed != null) {      
+async function onPost(webSocketConn: WebSocket, message: WebSocket.Data, sessionGroupName: string) {
+  //const messageClean = xssFilter.process(message.toString())
+  //all the message is dirty. 
+  //xss is handle by browser
+  //using markdown-it
+  const messageParsed:model.Post = verifyString(message,postSchema)
+  if (messageParsed != null) {
     let savedMsg = await savePost(messageParsed)
     if (savedMsg != null) {
       //Must use toObject() to delete some property

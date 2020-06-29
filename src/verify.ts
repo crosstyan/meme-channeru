@@ -1,6 +1,7 @@
 import Ajv from 'ajv'
 //use import json to keep type check
 import cfg from './config.json'
+import WebSocket from 'ws'
 //AJV Config
 //use typescript-json-schema (https://github.com/YousefED/typescript-json-schema)
 //to compile the interface to JSON Schema
@@ -13,3 +14,31 @@ export const boardSchema = SCHEMA_DEF.definitions.BoardInterface
 export const threadSchema = SCHEMA_DEF.definitions.ThreadInterface
 export const userSchema=SCHEMA_DEF.definitions.UserInterface
 export const ajv = new Ajv({ allErrors: true })
+
+export function verifyObject(postBody:object,verifySchema:object){
+  try {
+    const isValid = ajv.validate(verifySchema,postBody)
+    if (isValid) {
+      return postBody
+    } else {
+      return null
+    }
+  } catch{
+    return null
+  }
+}
+
+export function verifyString(wsData:WebSocket.Data,verifySchema:object){
+  const wsDataStr = wsData.toString()
+  try {
+    const wsDataJson = JSON.parse(wsDataStr)
+    const isValid = ajv.validate(verifySchema,wsDataJson)
+    if (isValid) {
+      return wsDataJson
+    } else {
+      return null
+    }
+  } catch{
+    return null
+  }
+}

@@ -4,12 +4,23 @@
     "definitions": {
         "Board": {
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "id": {
-                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
                 },
                 "manager": {
                     "items": {
-                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/User"
+                        "anyOf": [
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                            },
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/User"
+                            }
+                        ]
                     },
                     "type": "array"
                 },
@@ -18,34 +29,37 @@
                 },
                 "threadList": {
                     "items": {
-                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                        "anyOf": [
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                            },
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Thread"
+                            }
+                        ]
                     },
                     "type": "array"
                 }
             },
             "required": [
-                "id",
-                "manager",
-                "name",
-                "threadList"
+                "description",
+                "name"
             ],
             "type": "object"
         },
         "BoardInterface": {
             "properties": {
-                "manager": {
-                    "items": {
-                        "$ref": "http://example.com/schemas/schemaDef.json#/definitions/User"
-                    },
-                    "type": "array"
+                "description": {
+                    "type": "string"
                 },
                 "name": {
                     "maxLength": 26,
-                    "minLength": 6,
+                    "minLength": 1,
                     "type": "string"
                 }
             },
             "required": [
+                "description",
                 "name"
             ],
             "type": "object"
@@ -94,7 +108,15 @@
                     "type": "string"
                 },
                 "threadId": {
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                        },
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Thread"
+                        }
+                    ],
+                    "description": "Reference another Model"
                 },
                 "token": {
                     "type": "string"
@@ -102,8 +124,7 @@
             },
             "required": [
                 "content",
-                "nickname",
-                "threadId"
+                "nickname"
             ],
             "type": "object"
         },
@@ -115,10 +136,12 @@
                 },
                 "nickname": {
                     "maxLength": 26,
-                    "minLength": 6,
+                    "minLength": 3,
+                    "pattern": "^[^<>?]*$",
                     "type": "string"
                 },
                 "threadId": {
+                    "description": "Reference another Model",
                     "type": "string"
                 },
                 "token": {
@@ -139,9 +162,6 @@
         "ResponseJSON": {
             "properties": {
                 "data": {
-                    "items": {
-                    },
-                    "type": "array"
                 },
                 "from": {
                     "type": "number"
@@ -161,9 +181,50 @@
             ],
             "type": "object"
         },
+        "ResponseJson": {
+            "properties": {
+                "boardId": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "data": {
+                },
+                "from": {
+                    "type": "number"
+                },
+                "threadId": {
+                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
+                    "description": "A class representation of the BSON ObjectId type."
+                },
+                "to": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "data",
+                "from",
+                "to",
+                "total"
+            ],
+            "type": "object"
+        },
         "Thread": {
             "properties": {
                 "boardId": {
+                    "anyOf": [
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                        },
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Board"
+                        }
+                    ],
+                    "description": "Reference another Model"
+                },
+                "boardName": {
                     "type": "string"
                 },
                 "creator": {
@@ -176,7 +237,17 @@
                     "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
                 },
                 "postList": {
-                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                            },
+                            {
+                                "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Post"
+                            }
+                        ]
+                    },
+                    "type": "array"
                 },
                 "tag": {
                     "items": {
@@ -192,7 +263,7 @@
                 }
             },
             "required": [
-                "boardId",
+                "boardName",
                 "creator",
                 "creatorToken",
                 "id",
@@ -206,6 +277,10 @@
         "ThreadInterface": {
             "properties": {
                 "boardId": {
+                    "description": "Reference another Model",
+                    "type": "string"
+                },
+                "boardName": {
                     "type": "string"
                 },
                 "creator": {
@@ -230,6 +305,7 @@
             },
             "required": [
                 "boardId",
+                "boardName",
                 "title"
             ],
             "type": "object"
@@ -254,6 +330,18 @@
             },
             "required": [
                 "wsSessions"
+            ],
+            "type": "object"
+        },
+        "Types.ObjectId": {
+            "properties": {
+                "generationTime": {
+                    "description": "The generation time of this ObjectId instance",
+                    "type": "number"
+                }
+            },
+            "required": [
+                "generationTime"
             ],
             "type": "object"
         },

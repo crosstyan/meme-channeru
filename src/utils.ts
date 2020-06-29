@@ -1,6 +1,8 @@
-import Ajv from 'ajv'
 //use import json to keep type check
 import cfg from './config.json'
+import {JSDOM} from 'jsdom'
+import createDOMPurify from 'dompurify'
+import * as xss from 'xss'
 
 class ErrorMsg {
   errorMap: Record<number, string> = {
@@ -23,7 +25,28 @@ class ErrorMsg {
       }
       return JSON.stringify(msg)
       }
+  }
+  toObject(code: number){
+    if (this.errorMap[code] != undefined) {
+      const msg={
+        code: code,
+        description:this.errorMap[code]
+      }
+      return msg
+  } else {
+    const msg={
+      code: 622,
+      description:"Unknown error"
+    }
+    return msg
     }
 }
+  }
 //Error Parse
 export const errorMsg = new ErrorMsg
+
+//const window = new JSDOM('').window
+//@ts-ignore
+//export const DOMPurify = createDOMPurify(window)
+
+export const xssFilter = new xss.FilterXSS()

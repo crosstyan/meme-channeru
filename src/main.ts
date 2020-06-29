@@ -4,8 +4,8 @@ import { Socket } from 'net'
 //use import json to keep type check
 import cfg from './config.json'
 
-import * as model from './model'
-import { app } from './httpserver'
+import * as model from './models/index'
+import { app } from './router/index'
 import { errorMsg } from './utils'
 import {boardWs, threadWs} from './wsmodule'
 
