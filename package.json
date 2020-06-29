@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --nolazy --inspect-brk=9229 src/index.js",
+    "test": "node --nolazy --inspect-brk=9229 js/main.js",
     "schema":"typescript-json-schema ./tsconfig.json * -o ./src/schemaDef.json --strictNullChecks true --required true --id 'http://example.com/schemas/schemaDef.json'"
   },
   "keywords": [],
