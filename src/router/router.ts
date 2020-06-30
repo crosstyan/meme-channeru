@@ -8,6 +8,17 @@ import { ajv, postSchema, boardSchema, threadSchema,verifyObject } from '../veri
 import bodyParser from 'body-parser'
 
 export const PAGE_LIMIT = cfg.server.page_limit
+
+
+export class PageParams{
+  start: number = 0
+  end: number = PAGE_LIMIT
+  length() {
+    if (this.end > this.start) {
+      return this.end-this.start
+    }
+  }
+}
 interface PageInfoInterface{
   total: number
   from: number

@@ -35,7 +35,7 @@ app.post('/board/:boardName/:threadId', (req, res) => {
       thread.postList.push(savedPost._id)
       thread.count = thread.postList.length
       thread.lastModified = savedPost._id
-      thread.content=savedPost.content
+      thread.lastContent=savedPost.content
       await thread.save()
       res.json(savedPost)
       threadHub.broadcastGroup(threadId, JSON.stringify(savedPost))

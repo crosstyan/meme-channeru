@@ -7,6 +7,7 @@ import * as model from '../models/index'
 import { ajv, postSchema, boardSchema, threadSchema,verifyObject } from '../verify'
 import bodyParser from 'body-parser'
 import { app,postToDB ,PageInfo,PAGE_LIMIT} from './router'
+import { PageParams } from './router'
 
 function getBoards(req: express.Request, res: express.Response) {
   try {
@@ -28,15 +29,29 @@ app.get('/board', (req, res) => {
   getBoards(req,res)
 })
 app.get('/board/:boardName', (req, res) => {
-  const boardName = req.params['boardName']
+  const start = Number(req.query["st"])
+  const end=Number(req.query["e"])
+  const boardName = req.params["boardName"]
+  const page = new PageParams
+  let total: number = 0
+  if (Number.isInteger(start) && Number.isInteger(end) && (end - start < PAGE_LIMIT)) { 
+    page.start = start
+    page.end=end
+  }
   if (boardName != undefined) {
-    model.BoardModel.findOne({ name: boardName }, (err, board) => {
-      if (board) {
-        res.json(board)
+    model.BoardModel.findOne({ name: boardName }).populate({
+      path: 'threadList',
+      options:{skip: page.start, limit: page.length(), sort: { _id: -1 },select:{'__v':0,'postList':0}}
+    }).exec((err, populated) => {
+      if (populated) {
+        const info = new PageInfo(page.start, page.start + populated.threadList!.length-1)
+        populated.pageInfo=info
+        res.json(populated)
       } else {
-        res.json(errorMsg.toObject(404))
+        res.json(errorMsg.toObject(400))
       }
     })
+
   } else {
     res.json(errorMsg.toObject(400))
   }

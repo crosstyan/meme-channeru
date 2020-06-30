@@ -139,7 +139,7 @@ async function onPost(webSocketConn: WebSocket, message: WebSocket.Data, session
     if (savedMsg != null) {
       thread.postList.push(savedMsg._id)
       thread.count = thread.postList.length
-      thread.content = savedMsg.content
+      thread.lastContent = savedMsg.content
       thread.lastModified=savedMsg._id
       //Must use toObject() to delete some property
       //savedMsg=savedMsg.toObject()

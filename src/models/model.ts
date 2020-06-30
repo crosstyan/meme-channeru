@@ -5,7 +5,6 @@ import { prop, getModelForClass, ReturnModelType,Ref,setGlobalOptions, Severity 
 import cfg from '../config.json'
 import { errorMsg } from '../utils'
 
-setGlobalOptions({ options: { allowMixed: Severity,versionKey:false } });
 
 //MongoDB
 const mongoURL = `mongodb://${cfg.database.hostname}:${cfg.database.port}/${cfg.database.name}`

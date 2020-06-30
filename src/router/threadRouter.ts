@@ -12,17 +12,7 @@ import { count } from 'console'
 import mongoose from 'mongoose'
 import {boardHub} from '../wsmodule'
 import { prop, getModelForClass, ReturnModelType,Ref } from '@typegoose/typegoose'
-
-export class pageParams{
-  start: number = 0
-  end: number = PAGE_LIMIT
-  length() {
-    if (this.end > this.start) {
-      return this.end-this.start
-    }
-  }
-}
-
+import {PageParams} from './router'
 app.post('/board/:boardName', (req, res) => {
   postThread(req,res)
 })
@@ -32,12 +22,8 @@ app.get('/board/:boardName/:threadId', async(req, res) => {
   const start = Number(req.query["st"])
   const end=Number(req.query["e"])
   const threadId = req.params["threadId"]
-  const page = new pageParams
+  const page = new PageParams
   let total: number = 0
-    if (Number.isInteger(start)) {
-    page.start = start
-    page.end=start+PAGE_LIMIT
-  }
   if (Number.isInteger(start) && Number.isInteger(end) && (end - start < PAGE_LIMIT)) { 
     page.start = start
     page.end=end
@@ -47,7 +33,7 @@ app.get('/board/:boardName/:threadId', async(req, res) => {
     options:{skip: page.start, limit: page.length(), sort: { _id: -1 },select:{'__v':0}}
   }).exec((err, populated) => {
     if (populated) {
-      const info = new PageInfo(page.start, page.start + populated.postList.length)
+      const info = new PageInfo(page.start, page.start + populated.postList.length-1)
       populated.pageInfo=info
       res.json(populated)
     } else {
@@ -79,13 +65,16 @@ async function postThread(req: express.Request, res: express.Response) {
         verified.boardName = postParams.boardName
         const firstPost = new model.PostModel({
           nickname: verified.creator,
-          content: verified.content,
+          content: verified.lastContent,
           threadId: verified._id,
           token:verified.creatorToken,
         })
         verified.postList.push(firstPost._id)
-        verified.lastModified=firstPost._id
+        verified.lastModified = firstPost._id
+        verified.count=1
         const saved = await verified.save()
+        board.count = board.threadList?.length!
+        await board.save()
         await firstPost.save()
         //board.update({$push:{threadList:saved._id}})
         res.json(saved)

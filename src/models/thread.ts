@@ -5,7 +5,8 @@ import { prop, getModelForClass, ReturnModelType,Ref,modelOptions } from '@typeg
 import cfg from '../config.json'
 import { errorMsg } from '../utils'
 import { Post} from './post'
-import {Board} from './board'
+import { Board } from './board'
+import{PageInfo}from '../router'
 interface ThreadInterface{
   boardName?: string
   /**
@@ -17,7 +18,7 @@ interface ThreadInterface{
    * @maxLength 300
    */
   title: string
-  content: string
+  lastContent: string
   /**
    * @minLength 1
    * @maxLength 26
@@ -31,7 +32,7 @@ interface ThreadInterface{
   tag?:string[]
 }
 
-@modelOptions({ schemaOptions: { versionKey:false } })
+@modelOptions({ schemaOptions: { versionKey:false },options:{allowMixed:0} })
 export class Thread implements ThreadInterface{
   @prop()
   id: ObjectID
@@ -58,7 +59,7 @@ export class Thread implements ThreadInterface{
   lastModified: Ref<Post>
   //Return latest post's ObjectID
   @prop()
-  content: string
+  lastContent: string
   @prop()
   pageInfo: object
   @prop()
