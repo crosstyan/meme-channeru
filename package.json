@@ -1,8 +1,8 @@
 {
-  "name": "test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
+  "name": "websocket-forum",
+  "version": "0.1.0",
+  "description": "a forum based on websocket and mongodb. Restful API. ",
+  "main": "js/main.js",
   "scripts": {
     "test": "node --nolazy --inspect-brk=9229 js/main.js",
     "schema": "typescript-json-schema ./tsconfig.json * -o ./src/schemaDef.json --strictNullChecks true --required true --id 'http://example.com/schemas/schemaDef.json'"
@@ -11,12 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/dompurify": "^2.0.2",
-    "@types/jsdom": "^16.2.3",
     "ajv": "^6.12.2",
     "body-parser": "^1.19.0",
     "config-yml": "^0.10.3",
-    "dompurify": "^2.0.12",
     "express": "^4.17.1",
     "jsdom": "^16.2.2",
     "mongodb": "^3.5.9",
