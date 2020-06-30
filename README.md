@@ -1,8 +1,8 @@
 # Meme Channeru
-ミームチャンネル
-为什么我们还需要一个匿名版? 
-一个拥有实时推送能力的匿名版不觉得很酷么? 
-Don't you think an real-time anonymous English-language imageboard is so cool? 
+ミームチャンネル  
+为什么我们还需要一个匿名版?  
+一个拥有实时推送能力的匿名版不觉得很酷么?  
+Don't you think an real-time anonymous English-language imageboard is so cool?  
 When imageboard starts to become an instant messaging app, what will happen? 
 ## What is this project
 the project aims to provide a websocket based API forum service, Just like 4ch or 2ch.  
