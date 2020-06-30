@@ -1,5 +1,15 @@
 {
-    "nickname":"rabbit",
-    "content":"little rabbit",
-    "threadId":"507f1f77bcf86cd799439011"
+    "board":{
+        "name":"general",
+        "description":"you know what the heck it is"
+    },
+    "thread":{
+        "title":"rabbit is dead",
+        "creator":"rabbit",
+        "content":"consectetur, adipisci velit...for every one"
+    },
+    "post":{
+        "nickname":"rabbit",
+        "content":"little rabbit"
+    }
 }

@@ -28,7 +28,7 @@ export function verifyObject(postBody:object,verifySchema:object){
   }
 }
 
-export function verifyString(wsData:WebSocket.Data,verifySchema:object){
+export function verifyString(wsData:WebSocket.Data,verifySchema:object):object|null{
   const wsDataStr = wsData.toString()
   try {
     const wsDataJson = JSON.parse(wsDataStr)

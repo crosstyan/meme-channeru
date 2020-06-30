@@ -1,6 +1,6 @@
 import mongodb, { ObjectID } from 'mongodb'
 import mongoose from 'mongoose'
-import { prop, getModelForClass, ReturnModelType,Ref } from '@typegoose/typegoose'
+import { prop, getModelForClass, ReturnModelType,Ref,modelOptions } from '@typegoose/typegoose'
 //use import json to keep type check
 import cfg from '../config.json'
 import { errorMsg } from '../utils'
@@ -21,9 +21,10 @@ export interface PostInterface {
   /**
    * @TJS-type string
    */
-  threadId:Ref<ObjectID>
+  threadId?:Ref<ObjectID>
 }
 
+@modelOptions({ schemaOptions: { versionKey:false } })
 export class Post implements PostInterface{
   @prop()
   public id?: ObjectID
@@ -37,7 +38,7 @@ export class Post implements PostInterface{
   @prop()
   public token?: string
   
-  @prop({required:true, ref:'Thread'})
+  @prop({ref:'Thread'})
   public threadId!:Ref<ObjectID>
 }
 export const PostModel = getModelForClass(Post)

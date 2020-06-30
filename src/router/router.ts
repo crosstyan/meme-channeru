@@ -8,18 +8,17 @@ import { ajv, postSchema, boardSchema, threadSchema,verifyObject } from '../veri
 import bodyParser from 'body-parser'
 
 export const PAGE_LIMIT = cfg.server.page_limit
-interface ResponseJSON{
+interface PageInfoInterface{
   total: number
   from: number
   to: number
   data:any
 }
-class ResponseJson implements ResponseJSON{
-  constructor(total:number,from:number,to:number,data:any){
-    this.total=total
+export class PageInfo implements PageInfoInterface{
+  constructor(from:number,to:number){
+    //this.total=total
     this.from=from
     this.to=to
-    this.data=data
   }
   total: number
   from: number

@@ -8,9 +8,10 @@ import cfg from './config.json'
 import { errorMsg,xssFilter } from './utils'
 import { ajv, postSchema,verifyObject,verifyString } from './verify'
 import * as model from './models/index'
+import { Thread } from './models/index'
 
 interface WsSessionGroup{
-  id?: ObjectID
+  //id?: ObjectID
   name?:string
   wsSessions: WebSocket[]
   //Or use a map with uuid
@@ -21,7 +22,7 @@ class WsHub{
   //wsSessionGroupMap:Map<string,WsSessionGroup> = new Map
   addSession(groupName:string,session:WebSocket) {
     if (this.wsSessionGroupMap[groupName]==undefined){
-      const sessionGroup = new ThreadSessionGroup
+      const sessionGroup = new SessionGroup
       sessionGroup.name = groupName
       sessionGroup.wsSessions.push(session)
       this.wsSessionGroupMap[groupName] = sessionGroup
@@ -46,15 +47,17 @@ class WsHub{
   }
   broadcastGroup(groupName:string, message: WebSocket.Data):void {
     const targetGroup = this.wsSessionGroupMap[groupName]
-    targetGroup?.wsSessions.forEach((session) => {
-      if (session.readyState === WebSocket.OPEN) {
-        session.send(message)
-      }
-    })
-    console.log(`"${message}" from "${groupName}"`)
+    if (targetGroup!=undefined) {
+      targetGroup?.wsSessions.forEach((session) => {
+        if (session.readyState === WebSocket.OPEN) {
+          session.send(message)
+        }
+      })
+      console.log(`"${message}" from "${groupName}"`)
+    }
   }
 }
-class ThreadSessionGroup implements WsSessionGroup{
+class SessionGroup implements WsSessionGroup{
   id?: ObjectID
   name?:string
   wsSessions: WebSocket[] =[]
@@ -68,7 +71,24 @@ export const boardWs = new WebSocket.Server({
   noServer:true
 })
 boardWs.on('connection', (webSocketConn, req) => {
-  webSocketConn.send("Hello World")
+  const urlParamMap = url.parse(req.url!, true)
+  const boardName = urlParamMap.query["name"]?.toString()
+  if (boardName != undefined) {
+    model.BoardModel.findOne({ name: boardName },(err,board)=> {
+      if (board) {
+        boardHub.addSession(boardName, webSocketConn)
+        webSocketConn.on('close', () => {
+          boardHub.deleteSession(boardName, webSocketConn)
+        })
+      } else {
+        webSocketConn.send(errorMsg.toString(1003))
+        webSocketConn.close(1003,"Params error")
+      }
+    })
+  } else {
+    webSocketConn.send(errorMsg.toString(1003))
+    webSocketConn.close(1003,"Params error")
+  }
 })
 
 //Websocket Thread Server
@@ -82,40 +102,58 @@ threadWs.on('connection', (webSocketConn, req) => {
 })
 async function threadApp(webSocketConn: WebSocket, req: http.IncomingMessage) {
   //const urlParam = querystring.decode(urlParamMap!)
-  try {
-    const urlParamMap = url.parse(req.url!, true)
-    const sessionNameInURL = urlParamMap.query["name"]?.toString()
-    if (sessionNameInURL != undefined) {
-      threadHub.addSession(sessionNameInURL,webSocketConn)
-      webSocketConn.on('message', async (message) => { //Must add async here to keep the structure async
-        onPost(webSocketConn,message,sessionNameInURL)
-      })
-      webSocketConn.on('close', () => {
-        threadHub.deleteSession(sessionNameInURL, webSocketConn)
-      })
-    } else {
-      throw new Error('Params error')
-    }
-  } catch{
+  const urlParamMap = url.parse(req.url!, true)
+  const threadId = urlParamMap.query["id"]?.toString()
+  if (threadId!=undefined) {
+    model.ThreadModel.findById(threadId, (err, thread) => {
+      if (thread) {
+        threadHub.addSession(threadId!,webSocketConn)
+        webSocketConn.on('message', async (message) => { //Must add async here to keep the structure async
+          onPost(webSocketConn,message,threadId!,thread)
+        })
+        webSocketConn.on('close', () => {
+          threadHub.deleteSession(threadId!, webSocketConn)
+        })
+      } else {
+        webSocketConn.send(errorMsg.toString(1003))
+        webSocketConn.close(1003,"Params error")
+      }
+    })
+  } else {
     webSocketConn.send(errorMsg.toString(1003))
     webSocketConn.close(1003,"Params error")
   }
 }
 
-async function onPost(webSocketConn: WebSocket, message: WebSocket.Data, sessionGroupName: string) {
+async function onPost(webSocketConn: WebSocket, message: WebSocket.Data, sessionGroupName: string,thread:model.Thread) {
   //const messageClean = xssFilter.process(message.toString())
   //all the message is dirty. 
   //xss is handle by browser
   //using markdown-it
+
+  //messageParsed may be null
+  //@ts-ignore
   const messageParsed:model.Post = verifyString(message,postSchema)
-  if (messageParsed != null) {
+  if (messageParsed) {
     let savedMsg = await savePost(messageParsed)
     if (savedMsg != null) {
+      thread.postList.push(savedMsg._id)
+      thread.count = thread.postList.length
+      thread.content = savedMsg.content
+      thread.lastModified=savedMsg._id
       //Must use toObject() to delete some property
-      savedMsg=savedMsg.toObject()
-      delete savedMsg?.threadId
+      //savedMsg=savedMsg.toObject()
+      //delete savedMsg?.threadId
+
+      //You must save it after modified. 
+      //There's such method, ts is too stupid
+      //@ts-ignore
+      await thread.save()
       const messageStr = JSON.stringify(savedMsg) 
-      threadHub.broadcastGroup(sessionGroupName,messageStr)
+      threadHub.broadcastGroup(sessionGroupName, messageStr)
+      //@ts-ignore
+      delete thread._doc.postList
+      boardHub.broadcastGroup(thread.boardName,JSON.stringify(thread))
     } else {
       webSocketConn.send(errorMsg.toString(500))
     }

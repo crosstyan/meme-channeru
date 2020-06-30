@@ -110,10 +110,10 @@
                 "threadId": {
                     "anyOf": [
                         {
-                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
                         },
                         {
-                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Thread"
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
                         }
                     ],
                     "description": "Reference another Model"
@@ -150,8 +150,7 @@
             },
             "required": [
                 "content",
-                "nickname",
-                "threadId"
+                "nickname"
             ],
             "type": "object"
         },
@@ -216,15 +215,18 @@
                 "boardId": {
                     "anyOf": [
                         {
-                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
                         },
                         {
-                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Board"
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
                         }
                     ],
                     "description": "Reference another Model"
                 },
                 "boardName": {
+                    "type": "string"
+                },
+                "content": {
                     "type": "string"
                 },
                 "creator": {
@@ -235,6 +237,17 @@
                 },
                 "id": {
                     "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
+                },
+                "lastModified": {
+                    "anyOf": [
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Types.ObjectId"
+                        },
+                        {
+                            "$ref": "http://example.com/schemas/schemaDef.json#/definitions/Post"
+                        }
+                    ],
+                    "description": "Reference another Model"
                 },
                 "postList": {
                     "items": {
@@ -257,20 +270,17 @@
                 },
                 "title": {
                     "type": "string"
-                },
-                "updateTime": {
-                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId"
                 }
             },
             "required": [
                 "boardName",
+                "content",
                 "creator",
                 "creatorToken",
                 "id",
                 "postList",
                 "tag",
-                "title",
-                "updateTime"
+                "title"
             ],
             "type": "object"
         },
@@ -283,12 +293,18 @@
                 "boardName": {
                     "type": "string"
                 },
+                "content": {
+                    "type": "string"
+                },
                 "creator": {
                     "maxLength": 26,
-                    "minLength": 6,
+                    "minLength": 1,
                     "type": "string"
                 },
                 "creatorToken": {
+                    "type": "string"
+                },
+                "postList": {
                     "type": "string"
                 },
                 "tag": {
@@ -304,8 +320,8 @@
                 }
             },
             "required": [
-                "boardId",
-                "boardName",
+                "content",
+                "creator",
                 "title"
             ],
             "type": "object"
@@ -399,10 +415,6 @@
         },
         "WsSessionGroup": {
             "properties": {
-                "id": {
-                    "$ref": "http://example.com/schemas/schemaDef.json#/definitions/ObjectId",
-                    "description": "A class representation of the BSON ObjectId type."
-                },
                 "name": {
                     "type": "string"
                 },
